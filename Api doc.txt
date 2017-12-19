@@ -1,0 +1,33 @@
+DB Structure
+Api Methods request
+1. fetch-user-tasks
+2. delete-a-task
+3. create-task
+4. update-task
+    extension
+5. friends
+
+Response
+1.
+ {
+	status:200
+	type: "fetch_task"
+	response:{
+			task:[t1,t2]
+		}
+	}
+
+Task-
+{
+	title:""
+	desc:""
+	created: date
+	enddate: date
+	status: Complete/Inprogress/Dropped aka (C/I/D)
+}
+
+Request
+{
+    reqname : "fetch/delete/insert/.."
+    reqparams : {}
+}
