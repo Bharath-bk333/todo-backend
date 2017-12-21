@@ -27,8 +27,8 @@
 
              (POST "/"
                    request
-               (println (:body request))
-               (response (rh/create-new-task user (:body request)))))
+               ;(println (:body request))
+               (response (rh/handle-post user request))))
 
            (route/not-found "Not Found"))
 
@@ -38,5 +38,4 @@
   (->
     app-routes
     wrap-json-body
-    wrap-json-response)
-  )
+    wrap-json-response))

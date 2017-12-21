@@ -4,8 +4,10 @@
             [monger.operators :refer :all]
             [todo.connection :as tcn]
             [todo.user :as us]
-            [monger.util :refer [object-id]])
-  (:import org.bson.types.ObjectId))
+            [monger.util :refer [object-id]]
+            [monger.result :refer [acknowledged? updated-existing?]])
+  (:import org.bson.types.ObjectId)
+  (:import com.mongodb.WriteResult))
 
 (def bucket {:tasks "taskscoll"}) ;collection names in db -do not change
 
@@ -44,29 +46,29 @@
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (mc/remove-by-id
+    (let [res (mc/remove
                 db
                 (:tasks bucket)
-                taskid)]
+                {:_id (object-id taskid)
+                 :uid user})]
       (mg/disconnect conn)
-      (not (nil? res)))))
+      (= 1 (.getN res)))))
 
 (defn update-task
   "updates a certain field of task"
-  [user taskid updatekeys newvalues]
+  [user taskid ^:Map newmap]
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
-        nmap (zipmap (mapv #(str "tasks.$." %) updatekeys) newvalues)
         ]
-    ;(println "nmappp" nmap)
     (let [res (mc/update
                 db
                 (:tasks bucket)
-                {:_id taskid}
-                {$set nmap})
+                {:_id (object-id taskid)
+                 :uid user}
+                {$set newmap})
           ]
       (mg/disconnect conn)
-      (not (nil? res)))))
+      (updated-existing? res))))
 
 (defn- fetch-db-data
   [condition-map]

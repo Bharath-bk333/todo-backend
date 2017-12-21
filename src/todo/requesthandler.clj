@@ -8,7 +8,15 @@
   {
    :success {:status "success"}
    :failed {:status "failed"}
+   :update {:action "updateTask"}
+   :newtask {:action "newTask"}
+   :delete {:action "deleteTask"}
    })
+
+(def action-code
+  {:update "updateTask"
+   :newtask "newTask"
+   :delete "deleteTask"})
 
 (defn- wrap
   "wraps the key info with the data"
@@ -51,8 +59,8 @@
         result (qry/create-task task)
         ]
     (if (empty? result)
-      (wrap nil :failed)
-      (wrap {:data (merge result {:_id (str (:_id result))})} :success))))
+      (wrap nil :failed :newtask)
+      (wrap {:data (merge result {:_id (str (:_id result))})} :success :newtask))))
 
 (defn get-user-tasks
   "Get all tasks of a user"
@@ -77,3 +85,28 @@
     (if (empty? result)
       (wrap nil :failed)
       (wrap {:data result} :success))))
+
+(defn delete-task-by-id
+  "Delete task with given id from DB"
+  [user ^:Map body]
+  (let [res (qry/delete-task user (get body "taskid"))]
+    (if res
+      (wrap {:data res} {:taskid (get body "taskid")} :success :delete)
+      (wrap nil :failed :delete))))
+
+(defn update-task-by-id
+  "Updates a task params given user & data"
+  [user ^:Map body]
+  (let [res (qry/update-task user (get body "taskid") (get body "data"))]
+    (if res
+      (wrap {:data res} {:taskid (get body "taskid")} :success :update)
+      (wrap nil :failed :update))))
+
+(defn handle-post
+  "Function that handles the post request given action type"
+  [user ^:Map post-map]
+  (let [body (:body post-map)]
+    (case (get body "action")
+      "newTask" (create-new-task user body)
+      "deleteTask" (delete-task-by-id user body)
+      "updateTask" (update-task-by-id user body))))
