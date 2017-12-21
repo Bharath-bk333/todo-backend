@@ -11,12 +11,14 @@
    :update {:action "updateTask"}
    :newtask {:action "newTask"}
    :delete {:action "deleteTask"}
+   :createuser {:action "createUser"}
    })
 
 (def action-code
   {:update "updateTask"
    :newtask "newTask"
-   :delete "deleteTask"})
+   :delete "deleteTask"
+   :createuser "createUser"})
 
 (defn- wrap
   "wraps the key info with the data"
@@ -102,6 +104,16 @@
       (wrap {:data res} {:taskid (get body "taskid")} :success :update)
       (wrap nil :failed :update))))
 
+(defn create-new-user
+  "Creates a new user in db"
+  [^:Map body]
+  (let [res (qry/create-user (get-in body ["data" "uid"]))
+        result (assoc res :_id (str (get res :_id)))
+        ]
+    (if (empty? result)
+      (wrap nil :failed :createuser)
+      (wrap {:data result} :success :createuser))))
+
 (defn handle-post
   "Function that handles the post request given action type"
   [user ^:Map post-map]
@@ -109,4 +121,5 @@
     (case (get body "action")
       "newTask" (create-new-task user body)
       "deleteTask" (delete-task-by-id user body)
-      "updateTask" (update-task-by-id user body))))
+      "updateTask" (update-task-by-id user body)
+      "createUser" (create-new-user body))))
