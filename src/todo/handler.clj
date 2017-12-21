@@ -30,6 +30,10 @@
                ;(println (:body request))
                (response (rh/handle-post user request))))
 
+           (POST "/user"
+                 request
+             (response (rh/handle-post nil request)))
+
            (route/not-found "Not Found"))
 
 (def app
