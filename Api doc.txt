@@ -70,3 +70,11 @@ eg update task json
         "desc" : "useless as ever"
     }
 }
+
+{
+    "action": "createUser"
+    "data":{
+        "name":""
+        "uid":""   //routes defined by these
+    }
+}
