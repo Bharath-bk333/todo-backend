@@ -14,7 +14,7 @@
 (def coll-task "taskdata")
 
 (defn create-user
-  "Creates a new user in the database "
+  "Creates a new user in the database"
   [user]
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
@@ -25,7 +25,7 @@
                 (us/create-user-obj user))
           ]
       (mg/disconnect conn)
-      (not (nil? res)))))
+      res)))
 
 (defn create-task
   "Creates a new task in DB with given task params"
@@ -105,7 +105,8 @@
 (defn fetch-user-tasks
   "queries the db for all the tasks of user"
   [user]
-  (let [q {:uid user}
+  (let [q {:uid user
+           :type "task"}
         data (fetch-db-data q)
         ]
     data))
