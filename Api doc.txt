@@ -34,7 +34,37 @@ Request
 
 eg: create task Json request
 {
-    "uid": "91264981221"
+    "action":"newTask"
+    "data":{
+        "title" : "my new task"
+        "desc" : "useless as ever"
+    }
+}
+create task Json response
+{
+    "action":"newTask"
+    "status": success/failed
+    "data":{
+    all task params
+        "title" : "my new task"
+        "desc" : "useless as ever"
+    }
+}
+eg delete task json
+{
+    "action":"deleteTask"
+    "taskid": id
+}
+eg delete task response
+{
+    "status": success/failed
+    "action":"deleteTask"
+    "taskid": id
+}
+eg update task json
+{
+    "action":"updateTask"
+    "taskid": id
     "data":{
         "title" : "my new task"
         "desc" : "useless as ever"
