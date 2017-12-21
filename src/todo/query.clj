@@ -2,7 +2,9 @@
   (:require [monger.core :as mg]
             [monger.collection :as mc]
             [monger.operators :refer :all]
-            [todo.connection :as tcn])
+            [todo.connection :as tcn]
+            [todo.user :as us]
+            [monger.util :refer [object-id]])
   (:import org.bson.types.ObjectId))
 
 (def bucket {:tasks "taskscoll"}) ;collection names in db -do not change
@@ -10,41 +12,42 @@
 (def coll-task "taskdata")
 
 (defn create-user
+  "Creates a new user in the database "
   [user]
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (mc/insert-and-return db (:tasks bucket)
-                                    {:user user
-                                     :tasks []})
+    (let [res (mc/insert-and-return
+                db
+                (:tasks bucket)
+                (us/create-user-obj user))
           ]
       (mg/disconnect conn)
       (not (nil? res)))))
 
-(defn insert-task
-  [user task]
+(defn create-task
+  "Creates a new task in DB with given task params"
+  [task]
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (mc/update db (:tasks bucket)
-                         {:user user}
-                         {$push {:tasks task}}
-                         {:upsert true})
+    (let [res (mc/insert-and-return
+                db
+                (:tasks bucket)
+                task)
           ]
       (mg/disconnect conn)
-      (not (nil? res)))))
+      res)))
 
 (defn delete-task
   [user taskid]
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (mc/update
+    (let [res (mc/remove-by-id
                 db
                 (:tasks bucket)
-                {:user user}
-                {$pull {:tasks {:tid taskid}}})
-          ]
+                taskid)]
       (mg/disconnect conn)
       (not (nil? res)))))
 
@@ -55,15 +58,13 @@
         db (tcn/get-coll conn coll-task)
         nmap (zipmap (mapv #(str "tasks.$." %) updatekeys) newvalues)
         ]
-    (println "nmappp" nmap)
+    ;(println "nmappp" nmap)
     (let [res (mc/update
                 db
                 (:tasks bucket)
-                {:user user
-                 :tasks.tid taskid}
+                {:_id taskid}
                 {$set nmap})
           ]
-      (println "the result" res)
       (mg/disconnect conn)
       (not (nil? res)))))
 
@@ -72,25 +73,46 @@
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (mc/find-one-as-map
-                db
-                (:tasks bucket)
-                condition-map)
+    (let [res (doall (mc/find-maps
+                       db
+                       (:tasks bucket)
+                       condition-map))
           ]
       (mg/disconnect conn)
       res)))
 
-(defn test
+(defn fetch-all-tasks
   []
-  (let [conn (tcn/connect)
-        db (tcn/get-coll conn coll-task)
+  (let [q {:type "task"}
+        data (fetch-db-data q)
         ]
-    (let [res (mc/update
-                db
-                (:tasks bucket)
-                {:user "sumit"
-                 :tasks.tid "RPKVVKTSD"}
-                {$set {:tasks.title "taskman"}})
+    data))
+
+(defn fetch-task-by-id
+  [user taskid]
+  (try
+    (let [obid (object-id taskid)
+          q {:_id obid
+             :uid user}
+          data (fetch-db-data q)
           ]
-      (mg/disconnect conn)
-      res)))
+      data)
+    (catch Exception e
+      nil)))
+
+(defn fetch-user-tasks
+  "queries the db for all the tasks of user"
+  [user]
+  (let [q {:uid user}
+        data (fetch-db-data q)
+        ]
+    data))
+
+(defn fetch-user-tasks-by-status
+  "Queries the database to get all user tasks with given status"
+  [user status]
+  (let [q {:uid user
+           :status status}
+        data (fetch-db-data q)
+        ]
+    data))

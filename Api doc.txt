@@ -31,3 +31,12 @@ Request
     reqname : "fetch/delete/insert/.."
     reqparams : {}
 }
+
+eg: create task Json request
+{
+    "uid": "91264981221"
+    "data":{
+        "title" : "my new task"
+        "desc" : "useless as ever"
+    }
+}
