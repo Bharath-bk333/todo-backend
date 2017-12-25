@@ -19,13 +19,15 @@
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (mc/insert-and-return
-                db
-                (:tasks bucket)
-                (us/create-user-obj user))
-          ]
-      (mg/disconnect conn)
-      res)))
+    (if (mc/any? db (:tasks bucket) {:uid user :type "user"})
+      nil                                                   ;if user already exists
+      (let [res (mc/insert-and-return
+                  db
+                  (:tasks bucket)
+                  (us/create-user-obj user))
+            ]
+        (mg/disconnect conn)
+        res))))
 
 (defn create-task
   "Creates a new task in DB with given task params"
@@ -70,18 +72,31 @@
       (mg/disconnect conn)
       (updated-existing? res))))
 
+(defn- fetch
+  [db condition-map]
+  (let [res (doall (mc/find-maps
+                     db
+                     (:tasks bucket)
+                     condition-map))]
+    res))
+
 (defn- fetch-db-data
   [condition-map]
   (let [conn (tcn/connect)
         db (tcn/get-coll conn coll-task)
         ]
-    (let [res (doall (mc/find-maps
-                       db
-                       (:tasks bucket)
-                       condition-map))
-          ]
-      (mg/disconnect conn)
-      res)))
+    (if (:uid condition-map)
+      (if (mc/any? db (:tasks bucket)
+                   {:uid (:uid condition-map) :type "user"})
+        (let [res (fetch db condition-map)]
+          (mg/disconnect conn)
+          res)
+        (do (mg/disconnect conn)
+            (throw (Exception. "User Does not Exist")))
+        )
+      (let [res (fetch db condition-map)]
+        (mg/disconnect conn)
+        res))))
 
 (defn fetch-all-tasks
   []
