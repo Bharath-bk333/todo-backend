@@ -34,7 +34,7 @@
                  request
              (response (rh/handle-post nil request)))
 
-           (route/not-found "Not Found"))
+           (route/not-found (response {:status "failed" :error "undefined route"})))
 
 (def app
   ;(wrap-defaults app-routes site-defaults)
