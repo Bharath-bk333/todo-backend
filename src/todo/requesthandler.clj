@@ -34,18 +34,22 @@
                  (assoc task :_id (str (get task :_id))))]
     (if (nil? result)
       (wrap nil :failed)
-      (wrap {:data result} :success))))
+      (wrap {:count (count result) :data result} :success))))
 
 (defn get-user-task-by-id
   "Takes a task id & returns the task data associated with the task"
   [user taskid]
-  (let [res (qry/fetch-task-by-id user taskid)
-        result (when res
-                 (for [task res]
-                   (assoc task :_id (str (get task :_id)))))]
-    (if (empty? result)
-      (wrap nil :failed)
-      (wrap {:data result} :success))))
+  (try
+    (let [res (qry/fetch-task-by-id user taskid)
+          result (when res
+                   (for [task res]
+                     (assoc task :_id (str (get task :_id)))))]
+      (if (empty? result)
+        (wrap {:error "Invalid task id"} :failed)
+        (wrap {:data result} :success)))
+    (catch Exception e
+      (case (.getMessage e)
+        "User Does not Exist" (wrap {:error (.getMessage e)} :failed)))))
 
 (defn create-new-task
   "Creates a new task in the database
@@ -67,26 +71,29 @@
 (defn get-user-tasks
   "Get all tasks of a user"
   [user]
-  (let [res (qry/fetch-user-tasks user)
-        result (when res
-                 (for [task res]
-                   (assoc task :_id (str (get task :_id)))))
-        ]
-    (if (empty? result)
-      (wrap nil :failed)
-      (wrap {:data result} :success))))
+  (try
+    (let [res  (qry/fetch-user-tasks user)
+          result (when res
+                   (for [task res]
+                     (assoc task :_id (str (get task :_id)))))
+          ]
+      (wrap {:count (count result) :data result} :success))
+    (catch Exception e
+      (wrap {:error (.getMessage e)} :failed))))
 
 (defn get-user-task-status
   "Get all user tasks with the given status"
   [user status]
-  (let [res (qry/fetch-user-tasks-by-status user status)
-        result (when res
-                 (for [task res]
-                   (assoc task :_id (str (get task :_id)))))
-        ]
-    (if (empty? result)
-      (wrap nil :failed)
-      (wrap {:data result} :success))))
+  (try
+    (let [res (qry/fetch-user-tasks-by-status user status)
+          result (when res
+                   (for [task res]
+                     (assoc task :_id (str (get task :_id)))))
+          ]
+      (wrap {:count (count result) :data result} :success))
+    (catch Exception e
+      (case (.getMessage e)
+        "User Does not Exist" (wrap {:error (.getMessage e)} :failed)))))
 
 (defn delete-task-by-id
   "Delete task with given id from DB"
@@ -94,7 +101,7 @@
   (let [res (qry/delete-task user (get body "taskid"))]
     (if res
       (wrap {:data res} {:taskid (get body "taskid")} :success :delete)
-      (wrap nil :failed :delete))))
+      (wrap {:taskid (get body "taskid")} :failed :delete))))
 
 (defn update-task-by-id
   "Updates a task params given user & data"
@@ -102,16 +109,16 @@
   (let [res (qry/update-task user (get body "taskid") (get body "data"))]
     (if res
       (wrap {:data res} {:taskid (get body "taskid")} :success :update)
-      (wrap nil :failed :update))))
+      (wrap {:taskid (get body "taskid")} :failed :update))))
 
 (defn create-new-user
   "Creates a new user in db"
   [^:Map body]
   (let [res (qry/create-user (get-in body ["data" "uid"]))
-        result (assoc res :_id (str (get res :_id)))
+        result (if (nil? res) nil (update res :_id str))
         ]
     (if (empty? result)
-      (wrap nil :failed :createuser)
+      (wrap {:error "User Already Exists"} :failed :createuser)
       (wrap {:data result} :success :createuser))))
 
 (defn handle-post
