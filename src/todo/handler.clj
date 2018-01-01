@@ -7,8 +7,8 @@
             [todo.query :as qry]
             [todo.task :as tsk]
             [todo.requesthandler :as rh]
-            [clojure.pprint :as pprint]))
-
+            [clojure.pprint :as pprint]
+            [ring.middleware.cors :as cors]))
 (defroutes app-routes
            (GET "/tasks"
                 []
@@ -42,4 +42,6 @@
   (->
     app-routes
     wrap-json-body
-    wrap-json-response))
+    wrap-json-response
+    (cors/wrap-cors :access-control-allow-origin #"http://localhost:3449/*"
+                    :access-control-allow-methods [:get :post])))

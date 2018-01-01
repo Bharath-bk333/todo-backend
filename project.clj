@@ -7,7 +7,8 @@
                  [ring/ring-defaults "0.2.1"]
                  [ring/ring-json "0.4.0"]
                  [com.novemberain/monger "3.1.0"]
-                 [clj-time "0.14.2"]]
+                 [clj-time "0.14.2"]
+                 [ring-cors "0.1.11"]]
   :plugins [[lein-ring "0.9.7"]]
   :ring {:handler todo.handler/app}
   :profiles
